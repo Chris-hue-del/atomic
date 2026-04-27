@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>原子習慣 App</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #FAF9F6; --bg2: #F4F2ED; --bg3: #EDE9E1; --card: #FFFFFF;
+    --text: #2C2B27; --text2: #7A7870; --text3: #ABA99F;
+    --accent: #8B7355; --accent2: #C4A882; --accent-light: #F0E8DC;
+    --green: #5B7E5B; --green-light: #E8F0E8; --amber: #B07A2C; --amber-light: #FBF1E0;
+    --red: #C25C5C; --red-light: #FAECEC; --border: rgba(0,0,0,0.07);
+    --shadow: 0 2px 12px rgba(0,0,0,0.06); --radius: 16px; --radius-sm: 10px;
+  }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 420px; margin: 0 auto; overflow-x: hidden; }
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .header { padding: 52px 20px 16px; background: var(--bg); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .header-greeting { font-size: 13px; color: var(--text3); font-weight: 400; }
+  .header-title { font-family: 'Noto Serif TC', serif; font-size: 26px; font-weight: 600; color: var(--text); }
+  .streak-badge { display: flex; align-items: center; gap: 5px; background: var(--amber-light); border: 1px solid rgba(176,122,44,0.2); padding: 6px 12px; border-radius: 20px; }
+  .streak-badge span { font-size: 12px; font-weight: 500; color: var(--amber); }
+  .tabs { display: flex; padding: 0 20px 0; gap: 0; margin-bottom: 0; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .tab { flex: 1; padding: 12px 0 10px; text-align: center; font-size: 13px; color: var(--text3); font-weight: 400; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 500; }
+  .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+  .section-title { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; margin-top: 24px; }
+  .section-title:first-child { margin-top: 0; }
+  .habit-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+  .habit-card.completed { background: var(--green-light); border-color: rgba(91,126,91,0.2); }
+  .habit-card-top { display: flex; align-items: flex-start; gap: 12px; }
+  .habit-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .habit-info { flex: 1; }
+  .habit-name { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .habit-cue { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+  .habit-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .habit-streak { font-size: 11px; color: var(--green); background: var(--green-light); padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+  .habit-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.3s; flex-shrink: 0; cursor: pointer; }
+  .habit-check.done { background: var(--green); border-color: var(--green); }
+  .habit-identity { font-size: 11px; color: var(--accent2); font-style: italic; }
+  .progress-ring { margin-bottom: 20px; }
+  .ring-container { display: flex; align-items: center; gap: 20px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .ring-svg { flex-shrink: 0; }
+  .ring-pct { font-family: 'Noto Serif TC', serif; font-size: 32px; font-weight: 600; color: var(--text); }
+  .ring-label { font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+  .ring-sublabel { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .law-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .law-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 12px; }
+  .law-num { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.06em; margin-bottom: 4px; }
+  .law-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .law-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
+  .add-btn { position: fixed; bottom: 80px; right: calc(50% - 210px + 20px); width: 52px; height: 52px; background: var(--accent); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(139,115,85,0.35); z-index: 100; transition: transform 0.2s; }
+  @media (max-width: 420px) { .add-btn { right: 20px; } }
+  .add-btn:active { transform: scale(0.94); }
+  .add-btn svg { stroke: white; }
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; background: rgba(250,249,246,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; padding: 8px 0 20px; z-index: 99; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; }
+  .nav-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+  .nav-label { font-size: 10px; color: var(--text3); font-weight: 400; }
+  .nav-item.active .nav-label { color: var(--accent); }
+  .nav-item.active svg { stroke: var(--accent) !important; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--card); border-radius: 24px 24px 0 0; padding: 24px 20px 40px; width: 100%; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); max-height: 90vh; overflow-y: auto; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--bg3); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: 'Noto Serif TC', serif; font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .form-label { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+  .form-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; color: var(--text); font-family: 'Noto Sans TC'; outline: none; margin-bottom: 16px; }
+  .form-input:focus { border-color: var(--accent2); background: var(--card); }
+  .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 20px; }
+  .emoji-btn { width: 100%; aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg2); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .emoji-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+  .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 20px; }
+  .color-btn { width: 100%; aspect-ratio: 1; border: 2px solid transparent; border-radius: 50%; cursor: pointer; transition: all 0.15s; }
+  .color-btn.selected { border-color: var(--text); transform: scale(1.1); }
+  .submit-btn { width: 100%; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 500; font-family: 'Noto Sans TC'; cursor: pointer; transition: opacity 0.2s; }
+  .submit-btn:active { opacity: 0.85; }
+  .insight-card { background: var(--accent-light); border: 1px solid rgba(139,115,85,0.15); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+  .insight-quote { font-family: 'Noto Serif TC', serif; font-size: 14px; color: var(--accent); line-height: 1.7; margin-bottom: 8px; }
+  .insight-source { font-size: 11px; color: var(--accent2); }
+  .heatmap-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+  .heatmap-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+  .heatmap-grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; }
+  .hm-cell { aspect-ratio: 1; border-radius: 3px; background: var(--bg3); }
+  .hm-cell.l1 { background: #C8D9C8; }
+  .hm-cell.l2 { background: #8FB48F; }
+  .hm-cell.l3 { background: #5B7E5B; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; }
+  .stat-num { font-family: 'Noto Serif TC', serif; font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .ai-btn { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 10px; transition: background 0.2s; text-align: left; }
+  .ai-btn:active { background: var(--bg3); }
+  .ai-icon { width: 32px; height: 32px; background: var(--accent-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .ai-text { flex: 1; }
+  .ai-text strong { font-size: 13px; font-weight: 500; color: var(--text); display: block; }
+  .ai-text span { font-size: 11px; color: var(--text3); }
+  .ai-response { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+  .ai-response p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .ai-loading { display: flex; gap: 5px; align-items: center; padding: 8px 0; }
+  .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: bounce 1.2s infinite; }
+  .ai-dot:nth-child(2) { animation-delay: 0.2s; }
+  .ai-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+  .delete-area { display: flex; justify-content: flex-end; padding-top: 8px; }
+  .delete-btn { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 4px 0; font-family: 'Noto Sans TC'; }
+  .empty-state { text-align: center; padding: 48px 20px; }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+  .empty-sub { font-size: 13px; color: var(--text3); line-height: 1.6; }
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-greeting" id="greeting">今天是好日子</div>
+        <div class="header-title">我的習慣</div>
+      </div>
+      <div class="streak-badge" id="streak-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B07A2C" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span id="streak-text">0 天連續</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('today')">今日</div>
+    <div class="tab" onclick="switchTab('stats')">統計</div>
+    <div class="tab" onclick="switchTab('laws')">四大定律</div>
+    <div class="tab" onclick="switchTab('ai')">AI 教練</div>
+  </div>
+
+  <div class="content">
+    <div class="page active" id="page-today">
+      <div style="margin-bottom:16px;">
+        <div class="ring-container">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="28" fill="none" stroke="#EDE9E1" stroke-width="8"/>
+            <circle cx="36" cy="36" r="28" fill="none" stroke="#8B7355" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset="175.93"
+              id="ring-progress" transform="rotate(-90 36 36)"
+              style="transition:stroke-dashoffset 0.6s ease"/>
+          </svg>
+          <div class="ring-info">
+            <div class="ring-label">今日完成</div>
+            <div class="ring-pct" id="ring-pct">0%</div>
+            <div class="ring-sublabel" id="ring-sub">共 0 個習慣</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-title">今日習慣</div>
+      <div id="habits-list"></div>
+      <div id="empty-today" class="empty-state" style="display:none">
+        <div class="empty-icon">🌱</div>
+        <div class="empty-title">從第一個習慣開始</div>
+        <div class="empty-sub">按右下角 + 號，<br>建立你的第一個原子習慣</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-stats">
+      <div class="stats-row" id="stats-row"></div>
+      <div class="section-title">過去三個月紀錄</div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-title">完成率熱圖</div>
+        <div class="heatmap-grid" id="heatmap-grid"></div>
+      </div>
+      <div class="section-title">習慣明細</div>
+      <div id="stats-detail"></div>
+    </div>
+
+    <div class="page" id="page-laws">
+      <div class="section-title">原子習慣的四大定律</div>
+      <div class="law-cards">
+        <div class="law-card"><div class="law-num">定律一</div><div class="law-title">讓它顯而易見</div><div class="law-desc">設計環境，讓好習慣的線索顯而易見</div></div>
+        <div class="law-card"><div class="law-num">定律二</div><div class="law-title">讓它有吸引力</div><div class="law-desc">使用誘惑捆綁，配對喜歡與需要做的事</div></div>
+        <div class="law-card"><div class="law-num">定律三</div><div class="law-title">讓它容易執行</div><div class="law-desc">減少阻力，從兩分鐘開始</div></div>
+        <div class="law-card"><div class="law-num">定律四</div><div class="law-title">讓它令人滿足</div><div class="law-desc">立即獎勵，追蹤習慣，不要中斷</div></div>
+      </div>
+      <div class="section-title">書中金句</div>
+      <div id="quotes-list"></div>
+    </div>
+
+    <div class="page" id="page-ai">
+      <div class="section-title">AI 習慣教練</div>
+      <div id="ai-buttons"></div>
+      <div id="ai-output"></div>
+    </div>
+  </div>
+
+  <button class="add-btn" onclick="openModal()" id="add-btn-fab">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchNav('today',0)" id="nav-0">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ABA99F" stroke-width="1.8" stroke-linecap="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+      </div>
+      <span class="nav-label">今日</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('stats',1)" id="nav-1">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ABA99F" stroke-width="1.8" stroke-linecap="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <span class="nav-label">統計</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('laws',2)" id="nav-2">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ABA99F" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+        </svg>
+      </div>
+      <span class="nav-label">定律</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('ai',3)" id="nav-3">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ABA99F" stroke-width="1.8" stroke-linecap="round">
+          <path d="M12 2a8 8 0 018 8c0 5.25-8 12-8 12S4 15.25 4 10a8 8 0 018-8z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <span class="nav-label">教練</span>
+    </div>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增習慣</div>
+    <label class="form-label">習慣名稱</label>
+    <input class="form-input" id="habit-name" placeholder="例如：每天冥想 10 分鐘" />
+    <label class="form-label">觸發線索（完成...之後，我會...）</label>
+    <input class="form-input" id="habit-cue" placeholder="例如：早餐後，我會冥想" />
+    <label class="form-label">身份認同（我是一個…的人）</label>
+    <input class="form-input" id="habit-identity" placeholder="例如：我是一個注重健康的人" />
+    <label class="form-label">選擇圖示</label>
+    <div class="emoji-grid" id="emoji-grid"></div>
+    <label class="form-label">選擇顏色</label>
+    <div class="color-grid" id="color-grid"></div>
+    <button class="submit-btn" onclick="addHabit()">建立習慣</button>
+  </div>
+</div>
+
+<script>
+// ===== 常數 =====
+const EMOJIS = ['🧘','📚','💪','🏃','💧','🥗','😴','✍️','🎯','🎵','🌿','☀️','🫁','🧠','❤️','🌊','🧹','🐕','🎨','🛏️','🚴','🌅','🍵','📝'];
+const COLORS = ['#E8D5C4','#C4D9C4','#C4D4E8','#E8C4C4','#D9C4E8','#E8E4C4','#C4E8E4','#E8D4C4','#D4C4E8','#C4E8D4','#E4C4D4','#CACFE8'];
+const QUOTES = [
+  { text: '你不需要成為行為改變的受害者。你可以成為設計師。', src: '原子習慣 第一章' },
+  { text: '每一個習慣都是由線索、渴望、回應和獎賞四個步驟組成的回饋循環。', src: '原子習慣 第三章' },
+  { text: '身份認同的改變是習慣改變的核心。每次你執行一個習慣，你就在投票給你想成為的那種人。', src: '原子習慣 第二章' },
+  { text: '讓好習慣顯而易見、有吸引力、容易執行，並且讓人滿足。', src: '原子習慣 四大定律' },
+  { text: '每天進步 1%，一年後你會進步 37 倍。', src: '原子習慣 第一章' },
+  { text: '你不會上升到目標的水準，而是下降到系統的水準。', src: '原子習慣 第一章' },
+  { text: '習慣是身份認同的具體化。每一次你整理床鋪，你就在強化自己是一個有條理的人。', src: '原子習慣 第二章' },
+  { text: '減少摩擦力。讓最常見的行動也是最容易的行動。', src: '原子習慣 第十二章' },
+];
+
+let selectedEmoji = '🎯';
+let selectedColor = COLORS[0];
+let currentTab = 'today';
+
+// ===== localStorage 工具 =====
+function getLS(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; }
+  catch { return def; }
+}
+function setLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e) { console.error('localStorage error:', e); }
+}
+
+// ===== 資料操作 =====
+function getHabits() { return getLS('ah_habits', []); }
+function saveHabits(h) { setLS('ah_habits', h); }
+function getTodayKey() { return new Date().toISOString().slice(0, 10); }
+function getHistory() { return getLS('ah_history', {}); }
+function saveHistory(h) { setLS('ah_history', h); }
+
+function markToday(id, done) {
+  const hist = getHistory();
+  const key = getTodayKey();
+  if (!hist[key]) hist[key] = {};
+  hist[key][id] = done;
+  saveHistory(hist);
+}
+
+function isTodayDone(id) {
+  const hist = getHistory();
+  return !!(hist[getTodayKey()] && hist[getTodayKey()][id]);
+}
+
+function getStreak() {
+  const habits = getHabits();
+  if (!habits.length) return 0;
+  const hist = getHistory();
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const key = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const dayData = hist[key] || {};
+    const anyDone = habits.some(h => dayData[h.id]);
+    if (anyDone) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+
+function getHabitStreak(id) {
+  const hist = getHistory();
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const key = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    if (hist[key] && hist[key][id]) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+
+// ===== 頁籤切換 =====
+function switchTab(tab) {
+  currentTab = tab;
+  const tabNames = ['today', 'stats', 'laws', 'ai'];
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', tabNames[i] === tab);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.getElementById('add-btn-fab').style.display = tab === 'today' ? 'flex' : 'none';
+  if (tab === 'today') renderToday();
+  if (tab === 'stats') renderStats();
+  if (tab === 'laws') renderLaws();
+  if (tab === 'ai') renderAI();
+}
+
+function switchNav(tab, idx) {
+  document.querySelectorAll('.nav-item').forEach((n, i) => {
+    n.classList.toggle('active', i === idx);
+    const svg = n.querySelector('svg');
+    if (svg) svg.style.stroke = i === idx ? 'var(--accent)' : '#ABA99F';
+  });
+  switchTab(tab);
+}
+
+// ===== 今日頁面渲染 =====
+function renderToday() {
+  const habits = getHabits();
+  const list = document.getElementById('habits-list');
+  const empty = document.getElementById('empty-today');
+  const done = habits.filter(h => isTodayDone(h.id)).length;
+  const total = habits.length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const circ = 175.93;
+
+  document.getElementById('ring-progress').style.strokeDashoffset = circ - (circ * pct / 100);
+  document.getElementById('ring-pct').textContent = pct + '%';
+  document.getElementById('ring-sub').textContent = `${done} / ${total} 個習慣`;
+
+  const streak = getStreak();
+  document.getElementById('streak-text').textContent = streak + ' 天連續';
+
+  const now = new Date().getHours();
+  const greet = now < 12 ? '早安，新的一天開始了' : now < 18 ? '下午好，繼續保持！' : '晚上好，今日還有機會';
+  document.getElementById('greeting').textContent = greet;
+
+  if (!total) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = habits.map(h => {
+    const isDone = isTodayDone(h.id);
+    const hStreak = getHabitStreak(h.id);
+    return `<div class="habit-card ${isDone ? 'completed' : ''}" id="hcard-${h.id}">
+      <div class="habit-card-top">
+        <div class="habit-icon" style="background:${h.color}">${h.emoji}</div>
+        <div class="habit-info">
+          <div class="habit-name">${escHtml(h.name)}</div>
+          ${h.cue ? `<div class="habit-cue">⚡ ${escHtml(h.cue)}</div>` : ''}
+          <div class="habit-meta">
+            ${hStreak > 0 ? `<span class="habit-streak">🔥 ${hStreak} 天</span>` : ''}
+            ${h.identity ? `<span class="habit-identity">${escHtml(h.identity)}</span>` : ''}
+          </div>
+        </div>
+        <div class="habit-check ${isDone ? 'done' : ''}" onclick="toggleHabit('${h.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${isDone ? 'white' : '#D0CEC7'}" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+      <div class="delete-area">
+        <button class="delete-btn" onclick="deleteHabit('${h.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleHabit(id) {
+  const isDone = isTodayDone(id);
+  markToday(id, !isDone);
+  renderToday();
+}
+
+function deleteHabit(id) {
+  if (!confirm('確定要刪除這個習慣嗎？')) return;
+  const habits = getHabits().filter(h => h.id !== id);
+  saveHabits(habits);
+  renderToday();
+}
+
+// ===== 統計頁面渲染 =====
+function renderStats() {
+  const habits = getHabits();
+  const hist = getHistory();
+  const totalHabits = habits.length;
+  const streak = getStreak();
+  const allKeys = Object.keys(hist);
+  let totalDone = 0;
+  allKeys.forEach(k => { totalDone += Object.values(hist[k]).filter(Boolean).length; });
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${totalHabits}</div><div class="stat-lbl">習慣數量</div></div>
+    <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-lbl">連續天數</div></div>
+    <div class="stat-card"><div class="stat-num">${totalDone}</div><div class="stat-lbl">累計完成</div></div>
+  `;
+
+  const grid = document.getElementById('heatmap-grid');
+  const cells = [];
+  for (let i = 90; i >= 0; i--) {
+    const key = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const dayData = hist[key] || {};
+    const cnt = Object.values(dayData).filter(Boolean).length;
+    const cls = cnt === 0 ? '' : cnt === 1 ? 'l1' : cnt <= 3 ? 'l2' : 'l3';
+    cells.push(`<div class="hm-cell ${cls}" title="${key}: ${cnt}個"></div>`);
+  }
+  grid.innerHTML = cells.join('');
+
+  document.getElementById('stats-detail').innerHTML = habits.map(h => {
+    const s = getHabitStreak(h.id);
+    let total = 0;
+    allKeys.forEach(k => { if (hist[k] && hist[k][h.id]) total++; });
+    return `<div class="habit-card">
+      <div class="habit-card-top">
+        <div class="habit-icon" style="background:${h.color}">${h.emoji}</div>
+        <div class="habit-info">
+          <div class="habit-name">${escHtml(h.name)}</div>
+          <div class="habit-meta">
+            <span class="habit-streak">🔥 連續 ${s} 天</span>
+            <span style="font-size:11px;color:var(--text3)">共完成 ${total} 次</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">尚無習慣資料</div>';
+}
+
+// ===== 四大定律頁面渲染 =====
+function renderLaws() {
+  document.getElementById('quotes-list').innerHTML = QUOTES.map(q => `
+    <div class="insight-card">
+      <div class="insight-quote">「${q.text}」</div>
+      <div class="insight-source">— ${q.src}</div>
+    </div>
+  `).join('');
+}
+
+// ===== AI 教練頁面渲染 =====
+function renderAI() {
+  const habits = getHabits();
+  const habitNames = habits.map(h => h.name).join('、') || '（請先新增習慣）';
+  const currentStreak = getStreak();
+
+  const prompts = [
+    {
+      icon: '🔍',
+      title: '分析我的習慣系統',
+      desc: '根據原子習慣理論提供建議',
+      prompt: `我目前有以下習慣：${habitNames}。連續天數：${currentStreak}天。請根據《原子習慣》的四大定律，分析我的習慣系統並給出具體改善建議。`
+    },
+    {
+      icon: '🪜',
+      title: '設計習慣疊加',
+      desc: '用 if-then 公式串聯習慣',
+      prompt: `請幫我根據《原子習慣》的習慣疊加（habit stacking）方法，為這些習慣：${habitNames} 設計一個 if-then 習慣鏈，讓它們自然串聯。`
+    },
+    {
+      icon: '🧠',
+      title: '強化身份認同',
+      desc: '重塑你的自我形象',
+      prompt: `根據《原子習慣》，習慣改變的核心是身份認同的轉換。請幫我為這些習慣：${habitNames} 寫出相對應的身份認同陳述（我是一個...的人），並解釋如何讓我真正相信這些身份。`
+    },
+    {
+      icon: '📐',
+      title: '環境設計建議',
+      desc: '讓好習慣顯而易見',
+      prompt: `根據《原子習慣》的環境設計原則，請針對我的習慣：${habitNames} 給出具體的環境設計建議，讓線索更明顯、讓好習慣更容易執行。`
+    },
+  ];
+
+  document.getElementById('ai-buttons').innerHTML = prompts.map(p => `
+    <button class="ai-btn" onclick='callAI(${JSON.stringify(p.prompt)})'>
+      <div class="ai-icon">${p.icon}</div>
+      <div class="ai-text">
+        <strong>${p.title}</strong>
+        <span>${p.desc}</span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+  `).join('');
+}
+
+// ====== 【已修改】呼叫我們自己在 Vercel 架設的後端 API ======
+async function callAI(prompt) {
+  const output = document.getElementById('ai-output');
+  output.innerHTML = `<div class="ai-response">
+    <div class="ai-loading">
+      <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
+    </div>
+  </div>`;
+
+  try {
+    // 改為向 Vercel Serverless Function 發送請求
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+       throw new Error(data.error || '請求失敗');
+    }
+
+    const text = data.text || '無法取得回應';
+    output.innerHTML = `<div class="ai-response"><p>${text.replace(/\n/g, '<br>')}</p></div>`;
+  } catch (e) {
+    console.error(e);
+    output.innerHTML = `<div class="ai-response"><p style="color:var(--red)">連接失敗，請稍後再試。</p></div>`;
+  }
+}
+
+// ===== Modal 操作 =====
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  renderEmojiGrid();
+  renderColorGrid();
+  document.getElementById('habit-name').value = '';
+  document.getElementById('habit-cue').value = '';
+  document.getElementById('habit-identity').value = '';
+  setTimeout(() => document.getElementById('habit-name').focus(), 300);
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function renderEmojiGrid() {
+  document.getElementById('emoji-grid').innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-btn ${e === selectedEmoji ? 'selected' : ''}" onclick="selectEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+
+function renderColorGrid() {
+  document.getElementById('color-grid').innerHTML = COLORS.map(c =>
+    `<div class="color-btn ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+
+function selectEmoji(e) { selectedEmoji = e; renderEmojiGrid(); }
+function selectColor(c) { selectedColor = c; renderColorGrid(); }
+
+function addHabit() {
+  const name = document.getElementById('habit-name').value.trim();
+  if (!name) {
+    document.getElementById('habit-name').focus();
+    document.getElementById('habit-name').style.borderColor = 'var(--red)';
+    return;
+  }
+  document.getElementById('habit-name').style.borderColor = '';
+  const habits = getHabits();
+  habits.push({
+    id: Date.now().toString(),
+    name,
+    cue: document.getElementById('habit-cue').value.trim(),
+    identity: document.getElementById('habit-identity').value.trim(),
+    emoji: selectedEmoji,
+    color: selectedColor,
+    createdAt: getTodayKey()
+  });
+  saveHabits(habits);
+  closeModal();
+  renderToday();
+}
+
+// ===== 鍵盤 Enter 提交 =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('modal-overlay').classList.contains('open')) {
+    addHabit();
+  }
+  if (e.key === 'Escape') closeModal();
+});
+
+// ===== 初始化 =====
+renderToday();
+renderLaws();
+</script>
+</body>
+</html>
